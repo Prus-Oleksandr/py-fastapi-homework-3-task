@@ -43,7 +43,7 @@ logger = logging.getLogger(__name__)
 
 
 @router.post(
-    "/register/",
+    "/api/v1/accounts/register/",
     response_model=UserRegistrationResponseSchema,
     status_code=status.HTTP_201_CREATED,
 )
@@ -111,7 +111,7 @@ async def register_user(
         )
 
 
-@router.post("/activate/", response_model=MessageResponseSchema)
+@router.post("/api/v1/accounts/activate/", response_model=MessageResponseSchema)
 async def activate_account(
     data: UserActivationRequestSchema,
     db: AsyncSession = Depends(get_db),
@@ -161,7 +161,9 @@ async def activate_account(
     return {"message": "User account activated successfully."}
 
 
-@router.post("/password-reset/request/", response_model=MessageResponseSchema)
+@router.post(
+    "/api/v1/accounts/password-reset/request/", response_model=MessageResponseSchema
+)
 async def request_password_reset(
     data: PasswordResetRequestSchema,
     db: AsyncSession = Depends(get_db),
@@ -195,7 +197,9 @@ async def request_password_reset(
     }
 
 
-@router.post("/reset-password/complete/", response_model=MessageResponseSchema)
+@router.post(
+    "/api/v1/accounts/reset-password/complete/", response_model=MessageResponseSchema
+)
 async def reset_password_complete(
     data: PasswordResetCompleteRequestSchema,
     db: AsyncSession = Depends(get_db),
@@ -254,7 +258,7 @@ async def reset_password_complete(
 
 
 @router.post(
-    "/login/",
+    "/api/v1/accounts/login/",
     response_model=UserLoginResponseSchema,
     status_code=status.HTTP_201_CREATED,
 )
@@ -307,7 +311,7 @@ async def login_user(
 
 
 @router.post(
-    "/refresh/",
+    "/api/v1/accounts/refresh/",
     response_model=TokenRefreshResponseSchema,
 )
 async def refresh_access_token(
