@@ -1,6 +1,6 @@
 import secrets
 from datetime import datetime, timezone, timedelta
-
+from typing import cast
 import logging
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -12,6 +12,7 @@ from database import get_db
 from config.dependencies import get_jwt_auth_manager, get_settings
 from config.settings import BaseAppSettings
 from security.interfaces import JWTAuthManagerInterface
+from security.passwords import hash_password
 
 from database.models.accounts import (
     UserModel,
@@ -141,7 +142,7 @@ async def activate_account(
             detail="Invalid or expired activation token.",
         )
 
-    expires = token.expires_at
+    expires = cast(datetime, token.expires_at)
     if expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
 
@@ -215,7 +216,7 @@ async def reset_password_complete(
             detail="Invalid email or token.",
         )
 
-    expires = token_record.expires_at
+    expires = cast(datetime, token_record.expires_at)
     if expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
 
@@ -239,7 +240,7 @@ async def reset_password_complete(
         )
 
     try:
-        user.password = data.password
+        user._hashed_password = hash_password(data.password)
         await db.delete(token_record)
         await db.commit()
     except SQLAlchemyError:
@@ -279,7 +280,6 @@ async def login_user(
         )
 
     payload = {"user_id": user.id, "email": user.email}
-
     access_token = jwt_manager.create_access_token(payload)
     refresh_token = jwt_manager.create_refresh_token(payload)
 
@@ -306,7 +306,10 @@ async def login_user(
     }
 
 
-@router.post("/refresh/", response_model=TokenRefreshResponseSchema)
+@router.post(
+    "/refresh/",
+    response_model=TokenRefreshResponseSchema,
+)
 async def refresh_access_token(
     data: TokenRefreshRequestSchema,
     db: AsyncSession = Depends(get_db),
@@ -343,7 +346,7 @@ async def refresh_access_token(
             detail="Refresh token not found.",
         )
 
-    expires = token_record.expires_at
+    expires = cast(datetime, token_record.expires_at)
     if expires.tzinfo is None:
         expires = expires.replace(tzinfo=timezone.utc)
 
